@@ -1,6 +1,8 @@
 # Thomas_Challenge
 
-## Setup
+## Infrastructure Challenge
+
+### Setup
 
 1. Launch new EC2 Instance (using Ubuntu LTS 22) while allowing port 22, 80 and 443 and creating a private key pair
 2. Update `inventory.ini` to use your instance's public IP address, private key, and domain
@@ -17,6 +19,19 @@ ansible-playbook -i inventory.ini secure_server.yml
 ansible-playbook -i inventory.ini test_server.yml
 ```
 
-## Demo
+### Demo
 
 A demo of this app can be accessed at https://54.226.36.59/
+
+## Coding Challenge
+
+### Usage
+
+`python3 credit_card_validator.py`
+
+1. Enter an integer N representing number of credit card numbers
+2. Enter N number of credit card numbers
+
+Alternatively, you can run a small test suite:
+
+`python3 test_credit_card_validator.py`
