@@ -1,0 +1,36 @@
+---
+- name: Test web server configuration
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Check if Nginx is running
+      command: systemctl is-active nginx
+      register: nginx_status
+      ignore_errors: yes
+
+    - name: Assert Nginx is running
+      assert:
+        that:
+          - nginx_status.rc == 0
+
+    - name: Check if Flask app is running
+      command: pgrep -f "flask run"
+      register: flask_status
+      ignore_errors: yes
+
+    - name: Assert Flask app is running
+      assert:
+        that:
+          - flask_status.rc == 0
+
+    - name: Check if port 443 is open
+      wait_for:
+        port: 443
+        timeout: 5
+      ignore_errors: yes
+      register: port_443_status
+
+    - name: Assert port 443 is open
+      assert:
+        that:
+          - port_443_status is success
