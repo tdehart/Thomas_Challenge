@@ -1,0 +1,45 @@
+---
+- name: Secure web server
+  hosts: webservers
+  become: yes
+  vars:
+    domain: "{{ hostvars[inventory_hostname]['domain'] }}"
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create directory for SSL certificates
+      file:
+        path: /etc/nginx/ssl
+        state: directory
+        mode: '0755'
+
+    - name: Generate self-signed SSL certificate
+      command: >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048
+        -keyout /etc/nginx/ssl/nginx.key
+        -out /etc/nginx/ssl/nginx.crt
+        -subj "/C=US/ST=State/L=City/O=Organization/OU=Org Unit/CN={{ domain }}"
+      args:
+        creates: /etc/nginx/ssl/nginx.crt
+
+    - name: Configure Nginx
+      template:
+        src: nginx_self_signed.conf.j2
+        dest: /etc/nginx/sites-available/default
+      notify: Reload Nginx
+
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      notify: Reload Nginx
+
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded

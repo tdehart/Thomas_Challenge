@@ -1,0 +1,82 @@
+---
+- name: Set up web server
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+
+    - name: Install Python and pip
+      apt:
+        name:
+          - python3
+          - "{{ 'python3-pip' if ansible_distribution_version is version('18.04', '>=') else 'python-pip' }}"
+        state: present
+
+    - name: Install Flask
+      pip:
+        name: flask
+        state: present
+
+    - name: Create templates directory
+      file:
+        path: /home/ubuntu/templates
+        state: directory
+        mode: '0755'
+
+    - name: Copy HTML template
+      copy:
+        content: |
+          <html>
+          <head>
+          <title>Hello World</title>
+          </head>
+          <body>
+          <h1>Hello World!</h1>
+          </body>
+          </html>
+        dest: /home/ubuntu/templates/hello.html
+        mode: '0644'
+
+    - name: Copy Flask application
+      copy:
+        content: |
+          from flask import Flask, render_template
+          app = Flask(__name__)
+
+          @app.route('/')
+          def hello_world():
+              return render_template('hello.html')
+
+          if __name__ == '__main__':
+              app.run(host='0.0.0.0', port=5000)
+        dest: /home/ubuntu/app.py
+
+    - name: Set FLASK_APP environment variable
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'export FLASK_APP=/home/ubuntu/app.py'
+        state: present
+
+    - name: Stop existing Flask application
+      shell: pkill -f "flask run"
+      ignore_errors: yes
+
+    - name: Start Flask application
+      shell: |
+        source /home/ubuntu/.bashrc
+        nohup flask run --host=0.0.0.0 --port=5000 > /home/ubuntu/flask.log 2>&1 &
+      args:
+        executable: /bin/bash
+
+    - name: Gather facts
+      setup:
+
+    - name: Display distribution info
+      debug:
+        msg: 'Distribution: {{ ansible_distribution }}, Version: {{ ansible_distribution_version }}'
